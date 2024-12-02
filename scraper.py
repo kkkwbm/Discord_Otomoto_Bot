@@ -1,10 +1,10 @@
 import requests
 from bs4 import BeautifulSoup
-import json
-from datetime import datetime
 from typing import Any, Dict, List
 from dataset import Database
 from loguru import logger as log
+import hikari
+from datetime import datetime
 
 def scrape_otomoto(db: Database, url: str) -> List[Dict[str, Any]]:
     headers = {
@@ -98,13 +98,18 @@ def parse_html_links(soup: BeautifulSoup) -> List[Dict[str, Any]]:
     return offer_links
 
 
+def generate_embed(item, sub_id):
+    """
+    Generate a Discord embed for a scraped offer.
+    """
+    embed = hikari.Embed(title=item["title"], url=item["url"], color=hikari.Color(0x09B1BA))
+    embed.set_image(item.get("image_url", "https://via.placeholder.com/300"))
+    embed.add_field("Price", item.get("price", "Unknown"), inline=True)
+    embed.add_field("Mileage", item.get("mileage", "Unknown"), inline=True)
+    embed.add_field("Fuel Type", item.get("fuel_type", "Unknown"), inline=True)
+    embed.add_field("Transmission", item.get("transmission", "Unknown"), inline=True)
+    embed.add_field("Year", item.get("year", "Unknown"), inline=True)
+    embed.add_field("Location", item.get("location", "Unknown"), inline=True)
+    embed.set_footer(f"Subscription #{sub_id}")
+    return embed
 
-
-
-# Example usage in main.py
-if __name__ == "__main__":
-    from dataset import connect
-
-    db = connect("sqlite:///otomoto_offers.db")
-    url = "https://www.otomoto.pl/osobowe/audi--bmw--fiat--honda--hyundai--mercedes-benz--nissan--opel--peugeot--renault--toyota--volvo/od-2000?search%5Bfilter_enum_fuel_type%5D=petrol&search%5Bfilter_float_mileage%3Afrom%5D=100000&search%5Bfilter_float_price%3Afrom%5D=15000&search%5Bfilter_float_price%3Ato%5D=40000&search%5Bfilter_float_year%3Ato%5D=2020&search%5Border%5D=created_at_first%3Adesc"
-    scrape_otomoto(db, url)
