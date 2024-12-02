@@ -27,6 +27,7 @@
     "Python.main.executor": "Run",
     "Python.scraper.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "ignore.virus.scanning.warn.message": "true",
     "last_opened_file_path": "C:/Users/Bartosz/Desktop/Studia/Inżynierka/Discord_BOTs/Discord_Otomoto_Bot",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
@@ -40,6 +41,9 @@
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\Bartosz\Desktop\Studia\Inżynierka\Otomoto_bot" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Bartosz\Desktop\Studia\Inżynierka\Discord_BOTs\Discord_Otomoto_Bot\Discord_Otomoto_Bot" />
     </key>
   </component>
   <component name="SharedIndexes">
@@ -71,7 +75,7 @@
       <workItem from="1732992317770" duration="3528000" />
       <workItem from="1733016790187" duration="394000" />
       <workItem from="1733054871247" duration="206000" />
-      <workItem from="1733110444229" duration="16000" />
+      <workItem from="1733110444229" duration="262000" />
     </task>
     <servers />
   </component>
