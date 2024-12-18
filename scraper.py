@@ -10,12 +10,17 @@ from bs4 import BeautifulSoup
 import requests
 from datetime import datetime
 
-
 # Function to extract data from each offer
 def extract_offer_data(offer_html):
     """Extracts data from an individual offer."""
     soup = BeautifulSoup(offer_html, "html.parser")
     try:
+        # Check if the offer is promoted
+        promoted_tag = soup.find(class_="ooa-1wmudpx")
+        if promoted_tag and promoted_tag.text.strip() == "Wyróżnione":
+            log.info("Skipping promoted offer.")
+            return None
+
         # Extract Title and URL
         title_tag = soup.find('p', class_='e2z61p70 ooa-1ed90th er34gjf0')
         title = title_tag.text.strip() if title_tag else 'Unknown'
@@ -42,7 +47,7 @@ def extract_offer_data(offer_html):
         year_element = soup.select_one('dd[data-parameter="year"]')
         year = year_element.text.strip() if year_element else "Unknown"
 
-        location_element = soup.select_one('dd.ooa-1jb4k0u.epwfahw15 p.ooa-gmxnzj')
+        location_element = soup.select_one('dd.ooa-1jb4k0u.ecru18x15 p.ooa-gmxnzj')
         location = location_element.text.strip() if location_element else "Unknown"
 
         return {
@@ -61,14 +66,12 @@ def extract_offer_data(offer_html):
         log.error(f"Error extracting data from offer: {e}")
         return None
 
-
 # Function to validate URL
 def validate_url(url):
     """Validates the URL."""
     from urllib.parse import urlparse
     parsed = urlparse(url)
     return bool(parsed.netloc) and parsed.scheme in ['http', 'https']
-
 
 def validate_offer(offer):
     """Validates that an offer contains sufficient information."""
@@ -77,8 +80,6 @@ def validate_offer(offer):
         if offer.get(field) == 'Unknown':
             return False
     return True
-
-
 
 # Main scraping function
 def scrape_otomoto_updated(url, db=None, subscription_id=None):
@@ -94,7 +95,7 @@ def scrape_otomoto_updated(url, db=None, subscription_id=None):
 
         # Parse the page content
         soup = BeautifulSoup(response.text, 'html.parser')
-        offers = soup.select('article')  # Update with the correct selector for offers
+        offers = soup.select('article')[:20]  # Limit to the latest 20 offers
         log.info(f"Found {len(offers)} offers on the page.")
 
         offer_data_list = []
@@ -109,8 +110,6 @@ def scrape_otomoto_updated(url, db=None, subscription_id=None):
                         offer_data_list.append(offer_data)
                 else:
                     offer_data_list.append(offer_data)
-            else:
-                log.warning(f"Invalid or incomplete offer skipped: {offer_data}")
 
         return offer_data_list
     except requests.exceptions.RequestException as e:
@@ -118,6 +117,7 @@ def scrape_otomoto_updated(url, db=None, subscription_id=None):
     except Exception as e:
         log.error(f"Unexpected error: {e}")
     return []
+
 def process_offers(offers, db, subscription_id, discord_channel):
     """
     Process offers and save new ones to the database.
@@ -129,7 +129,7 @@ def process_offers(offers, db, subscription_id, discord_channel):
         if not existing_offer:
             # Add metadata for the new offer
             offer['subscription_id'] = subscription_id
-            offer['posted_at'] = datetime.datetime.now()
+            offer['posted_at'] = datetime.now()
 
             # Insert into the database
             db['otomoto_offers'].insert(offer)
@@ -151,9 +151,9 @@ def generate_embed(offer):
     """Generate a Discord embed from the offer data."""
     try:
         embed = hikari.Embed(
-            title=offer.get("title", "No Title"),
+            title=f"**{offer.get('title', 'No Title')}**",  # Make title bold
             url=offer.get("url", ""),
-            description=f"Price: {offer.get('price', 'Unknown')}\n"
+            description=f"**Price:** {offer.get('price', 'Unknown')}\n"
                         f"Mileage: {offer.get('mileage', 'Unknown')}\n"
                         f"Fuel: {offer.get('fuel', 'Unknown')}\n"
                         f"Gearbox: {offer.get('gearbox', 'Unknown')}\n"
@@ -162,8 +162,12 @@ def generate_embed(offer):
             color=0x00ff00
         )
         if "image_url" in offer and offer["image_url"]:
-            embed.set_thumbnail(offer["image_url"])
-        embed.set_footer(text=f"Posted at: {offer.get('posted_at', 'Unknown')}")
+            embed.set_image(offer["image_url"])
+        # Format datetime to exclude microseconds
+        posted_at = offer.get('posted_at', 'Unknown')
+        if isinstance(posted_at, datetime):
+            posted_at = posted_at.strftime("%Y-%m-%d %H:%M:%S")
+        embed.set_footer(text=f"Posted at: {posted_at}")
         return embed
     except Exception as e:
         log.error(f"Failed to generate embed: {e}")
